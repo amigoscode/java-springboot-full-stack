@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_IMAGE_NAME: product-service
+      DOCKER_COMPOSE_APP_SERVICE_NAME: product-service
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
       EC2_PUBLIC_IP_ADDRESS: ${{ secrets.EC2_PUBLIC_IP_ADDRESS }}
@@ -42,7 +44,11 @@ jobs:
       - name: SSH To EC2 and Deploy
         run: |
           ssh -o StrictHostKeyChecking=no ec2-user@$EC2_PUBLIC_IP_ADDRESS << EOF
-            ls
-            pwd
-            echo "Amigoscode" > hello.txt
+            cd ~
+            sed -i 's|image: '"$DOCKER_USERNAME"'/'"$DOCKER_IMAGE_NAME"':.*$|image: '"$DOCKER_USERNAME"'/'"$DOCKER_IMAGE_NAME"':'"$BUILD_NUMBER"'|' docker-compose.yml
+            docker-compose pull
+            docker-compose up -d '"$DOCKER_COMPOSE_APP_SERVICE_NAME"'
+            docker image prune -f
+            docker ps
+            echo "$BUILD_NUMBER" > build-number.txt
           EOF
