@@ -24,4 +24,4 @@ jobs:
           echo "Generated Build Number: $BUILD_NUMBER"
       - name: Maven Clean Verify
         run: mvn -B -ntp clean verify jib:build \
-          -Ddocker.image.tag=$BUILD_NUMBER
+              -Ddocker.image.tag=$BUILD_NUMBER
