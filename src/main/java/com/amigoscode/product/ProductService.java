@@ -110,7 +110,7 @@ public class ProductService {
                 System.err.println("Failed to upload image for product " + id + ": " + e.getMessage());
                 // Optionally, you could delete the product if image upload is critical
                 // productRepository.deleteById(id);
-                // throw new RuntimeException("Product created but image upload failed", e);
+                throw new IllegalStateException("Product created but image upload failed", e);
             }
         }
         
