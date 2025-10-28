@@ -9,6 +9,8 @@ services:
         SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/jfs
         SPRING_DATASOURCE_USERNAME: amigoscode
         SPRING_DATASOURCE_PASSWORD: password
+        SPRING_PROFILES_ACTIVE: aws
+
       ports:
         - "8090:8080"
       networks:
