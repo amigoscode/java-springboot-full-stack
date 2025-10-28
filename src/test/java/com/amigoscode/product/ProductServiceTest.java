@@ -239,12 +239,14 @@ class ProductServiceTest {
                 .when(productImageService).uploadProductImage(any(), any());
 
         // when
-        UUID productId = underTest.saveNewProductWithImage(name, description, price, stockLevel, mockImage);
+        assertThatThrownBy(() -> {
+            underTest.saveNewProductWithImage(name, description, price, stockLevel, mockImage);
+        })
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Product created but image upload failed");
 
         // then
-        assertThat(productId).isNotNull();
         verify(productRepository).save(any(Product.class));
-        verify(productImageService).uploadProductImage(productId, mockImage);
     }
 
     @Test
@@ -318,7 +320,7 @@ class ProductServiceTest {
         // then
         verify(productRepository).findById(productId);
         verify(productRepository).save(existingProduct);
-        
+
         assertThat(existingProduct.getName()).isEqualTo("Updated Name");
         assertThat(existingProduct.getDescription()).isEqualTo("Updated Description");
         assertThat(existingProduct.getImageUrl()).isEqualTo("updated-image.png");
