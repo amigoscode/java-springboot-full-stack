@@ -1,0 +1,60 @@
+services:
+  db-local-postgres:
+    container_name: jfs-postgres-local
+    image: postgres
+    environment:
+      POSTGRES_USER: amigoscode
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: jfs
+    ports:
+      - "5333:5432"
+    restart: unless-stopped
+    volumes:
+      - db-local:/data/postgres
+    networks:
+      - amigos
+
+  minio:
+    container_name: jfs-minio-local
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"  # API port
+      - "9001:9001"  # Console port
+    restart: unless-stopped
+    volumes:
+      - minio-data:/data
+    networks:
+      - amigos
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio-init:
+    container_name: jfs-minio-init
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin123;
+      /usr/bin/mc mb myminio/product-images --ignore-existing;
+      /usr/bin/mc policy set public myminio/product-images;
+      exit 0;
+      "
+    networks:
+      - amigos
+
+networks:
+  amigos:
+    driver: bridge
+
+volumes:
+  db-local:
+  minio-data:
