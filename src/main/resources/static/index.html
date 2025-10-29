@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Image Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .product-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            background-color: #f0f0f0;
+        }
+        .product-info h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .product-price {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        .product-description {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        .upload-section {
+            margin-bottom: 20px;
+        }
+        .file-input {
+            margin: 10px 0;
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .file-input:hover {
+            border-color: #2c5aa0;
+            background-color: #f8f9ff;
+        }
+        .btn {
+            background-color: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background-color: #1e3d6f;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .no-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            background-color: #f0f0f0;
+            color: #666;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Product Image Management System</h1>
+        
+        <div class="upload-section">
+            <h2>Add New Product</h2>
+            <form id="productForm">
+                <div class="form-group">
+                    <label for="productName">Product Name:</label>
+                    <input type="text" id="productName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="productDescription">Description:</label>
+                    <textarea id="productDescription" name="description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Price:</label>
+                    <input type="number" id="productPrice" name="price" step="0.01" min="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="stockLevel">Stock Level:</label>
+                    <input type="number" id="stockLevel" name="stockLevel" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="productImage">Product Image:</label>
+                    <div class="file-input" onclick="document.getElementById('productImage').click()">
+                        <input type="file" id="productImage" name="image" accept="image/*" style="display: none;">
+                        <span id="fileLabel">Click to select image file</span>
+                    </div>
+                </div>
+                <button type="submit" class="btn">Create Product</button>
+            </form>
+        </div>
+
+        <div id="message"></div>
+    </div>
+
+    <div class="container">
+        <h2>Products</h2>
+        <div id="products" class="product-grid">
+            <div class="loading">Loading products...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1/products';
+        
+        // File input handling
+        document.getElementById('productImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const label = document.getElementById('fileLabel');
+            if (file) {
+                label.textContent = `Selected: ${file.name}`;
+            } else {
+                label.textContent = 'Click to select image file';
+            }
+        });
+
+        // Product form submission
+        document.getElementById('productForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('name', document.getElementById('productName').value);
+            formData.append('description', document.getElementById('productDescription').value);
+            formData.append('price', document.getElementById('productPrice').value);
+            formData.append('stockLevel', document.getElementById('stockLevel').value);
+            
+            const imageFile = document.getElementById('productImage').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+            
+            try {
+                showMessage('Creating product...', 'loading');
+                
+                // Create product with image in single request
+                const response = await fetch(API_BASE, {
+                    method: 'POST',
+                    body: formData  // Don't set Content-Type header, let browser set it with boundary
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to create product: ${errorText}`);
+                }
+                
+                const productId = await response.text();
+                
+                showMessage('Product created successfully!', 'success');
+                document.getElementById('productForm').reset();
+                document.getElementById('fileLabel').textContent = 'Click to select image file';
+                loadProducts();
+                
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Load all products
+        async function loadProducts() {
+            try {
+                const response = await fetch(API_BASE);
+                const products = await response.json();
+                
+                const productsContainer = document.getElementById('products');
+                productsContainer.innerHTML = '';
+                
+                if (products.length === 0) {
+                    productsContainer.innerHTML = '<div class="loading">No products found</div>';
+                    return;
+                }
+                
+                products.forEach(product => {
+                    const productCard = createProductCard(product);
+                    productsContainer.appendChild(productCard);
+                });
+                
+            } catch (error) {
+                document.getElementById('products').innerHTML = 
+                    `<div class="error">Error loading products: ${error.message}</div>`;
+            }
+        }
+
+        // Create product card
+        function createProductCard(product) {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            
+            const imageUrl = product.imageUrl ? 
+                `${API_BASE}/${product.id}/image` : 
+                null;
+            
+            card.innerHTML = `
+                <div class="product-image-container">
+                    ${imageUrl ? 
+                        `<img src="${imageUrl}" alt="${product.name}" class="product-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                         <div class="no-image" style="display:none;">No Image Available</div>` :
+                        `<div class="no-image">No Image Available</div>`
+                    }
+                </div>
+                <div class="product-info">
+                    <h3>${product.name}</h3>
+                    <div class="product-price">$${product.price}</div>
+                    <div class="product-description">${product.description}</div>
+                    <div style="margin-bottom: 10px;">
+                        <strong>Stock:</strong> ${product.stockLevel} | 
+                        <strong>Status:</strong> ${product.isPublished ? 'Published' : 'Draft'}
+                    </div>
+                    <div>
+                        <button class="btn btn-secondary" onclick="uploadImage('${product.id}')">Upload Image</button>
+                        <button class="btn btn-secondary" onclick="deleteProduct('${product.id}')">Delete</button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Upload image for existing product
+        async function uploadImage(productId) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            
+            input.onchange = async function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    showMessage('Uploading image...', 'loading');
+                    
+                    const response = await fetch(`${API_BASE}/${productId}/image`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to upload image');
+                    }
+                    
+                    showMessage('Image uploaded successfully!', 'success');
+                    loadProducts();
+                    
+                } catch (error) {
+                    showMessage(`Error uploading image: ${error.message}`, 'error');
+                }
+            };
+            
+            input.click();
+        }
+
+        // Delete product
+        async function deleteProduct(productId) {
+            if (!confirm('Are you sure you want to delete this product?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/${productId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to delete product');
+                }
+                
+                showMessage('Product deleted successfully!', 'success');
+                loadProducts();
+                
+            } catch (error) {
+                showMessage(`Error deleting product: ${error.message}`, 'error');
+            }
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        // Load products on page load
+        loadProducts();
+    </script>
+</body>
+</html>
